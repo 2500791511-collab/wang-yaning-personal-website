@@ -9,6 +9,9 @@ type ProjectPageProps = {
   params: Promise<{ slug: string }>;
 };
 
+const DEFAULT_VIDEO_BASE_URL =
+  'https://wang-yaning-portfolio.netlify.app/api/media';
+
 export function generateStaticParams() {
   return videoProjects.map((project) => ({ slug: project.slug }));
 }
@@ -40,10 +43,10 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params;
   const project = getVideoProject(slug);
   if (!project) notFound();
-  const staticMediaBase = process.env.NEXT_PUBLIC_VIDEO_BASE_URL?.replace(/\/$/, '');
-  const projectVideoSource = staticMediaBase
-    ? `${staticMediaBase}/${project.slug}.mp4`
-    : `/api/media/${project.slug}`;
+  const staticMediaBase = (
+    process.env.NEXT_PUBLIC_VIDEO_BASE_URL || DEFAULT_VIDEO_BASE_URL
+  ).replace(/\/$/, '');
+  const projectVideoSource = `${staticMediaBase}/${project.slug}`;
 
   return (
     <main className="project-detail">
@@ -108,7 +111,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             </video>
           </div>
           <div className="project-player-meta">
-            <span>{staticMediaBase ? 'NETLIFY CDN STREAM' : 'R2 HIGH-RES STREAM'}</span>
+            <span>CDN HIGH-RES STREAM</span>
             <span>1080P · ORIGINAL FRAME RATE</span>
           </div>
         </section>

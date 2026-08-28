@@ -2,7 +2,7 @@ import { env } from 'cloudflare:workers';
 import { getVideoProject } from '@/data/video-projects';
 
 type MediaEnv = {
-  PORTFOLIO_MEDIA: R2Bucket;
+  PORTFOLIO_MEDIA?: R2Bucket;
   MEDIA_UPLOAD_SECRET?: string;
 };
 
@@ -60,6 +60,7 @@ function parseRange(value: string, size: number) {
 export async function HEAD(_request: Request, context: RouteContext) {
   const { slug } = await context.params;
   if (!isKnownMedia(slug)) return new Response(null, { status: 404 });
+  if (!mediaEnv.PORTFOLIO_MEDIA) return new Response(null, { status: 503 });
 
   const object = await mediaEnv.PORTFOLIO_MEDIA.head(objectKey(slug));
   if (!object) return new Response(null, { status: 404 });
@@ -72,6 +73,9 @@ export async function HEAD(_request: Request, context: RouteContext) {
 export async function GET(request: Request, context: RouteContext) {
   const { slug } = await context.params;
   if (!isKnownMedia(slug)) return new Response('Video not found', { status: 404 });
+  if (!mediaEnv.PORTFOLIO_MEDIA) {
+    return new Response('R2 media binding is not configured', { status: 503 });
+  }
 
   const key = objectKey(slug);
   const metadata = await mediaEnv.PORTFOLIO_MEDIA.head(key);
@@ -110,6 +114,9 @@ export async function GET(request: Request, context: RouteContext) {
 export async function PUT(request: Request, context: RouteContext) {
   const { slug } = await context.params;
   if (!isKnownMedia(slug)) return new Response('Unknown media item', { status: 404 });
+  if (!mediaEnv.PORTFOLIO_MEDIA) {
+    return new Response('R2 media binding is not configured', { status: 503 });
+  }
 
   const expectedSecret = mediaEnv.MEDIA_UPLOAD_SECRET;
   const suppliedSecret = request.headers.get('x-media-upload-key');
